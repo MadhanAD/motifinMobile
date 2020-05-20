@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 
@@ -14,6 +16,7 @@ class BorderIndicatorView(context: Context) : View(context) {
     }
 
     var borderIndicatorModel = BorderIndicatorModel(View(context))
+    var onBorderViewActionListener: OnBorderViewActionListener? = null
 
     private val mPaint = Paint().apply {
         color = Color.RED
@@ -77,12 +80,17 @@ class BorderIndicatorView(context: Context) : View(context) {
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        val rectF = borderIndicatorModel.convertToRect()
         return when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                event.actionIndex.also {pointerIndex ->
+                if (isScaleIndicator(event.x, event.y, rectF)) {
+                    scaleView()
+                } else if (isRotateIndicator(event.x, event.y, rectF)) {
+                    rotateView()
+                }
+                event.actionIndex.also { pointerIndex ->
                     event.getX(pointerIndex)
                 }
-
                 event.getPointerId(0)
                 true
             }
@@ -94,5 +102,48 @@ class BorderIndicatorView(context: Context) : View(context) {
             }
             else -> false
         }
+    }
+
+    private val scalePoint = 0.1f
+    private val rotateAngle = 10
+    private fun scaleView() {
+        scaleX = scaleX.plus(scalePoint)
+        scaleY = scaleY.plus(scalePoint)
+        onBorderViewActionListener?.onScaleAction()
+    }
+
+    private fun rotateView() {
+        rotation = rotation.plus(rotateAngle)
+        onBorderViewActionListener?.onRotateAction()
+    }
+
+    private fun isScaleIndicator(touchX: Float, touchY: Float, borderRectF: RectF): Boolean {
+        // is Left Top
+        if (borderRectF.left.plusOrMinusOf(touchX).and(borderRectF.top.plusOrMinusOf(touchY)))
+            return true
+
+        // is right top
+        if (borderRectF.right.plusOrMinusOf(touchX).and(borderRectF.top.plusOrMinusOf(touchY)))
+            return true
+
+        // is right bottom
+        if (borderRectF.right.plusOrMinusOf(touchX).and(borderRectF.bottom.plusOrMinusOf(touchY)))
+            return true
+
+        // is left bottom
+        if (borderRectF.left.plusOrMinusOf(touchX).and(borderRectF.bottom.plusOrMinusOf(touchY)))
+            return true
+
+        return false
+    }
+
+    private fun isRotateIndicator(touchX: Float, touchY: Float, borderRectF: RectF): Boolean {
+        return (borderRectF.left / 2).plus(borderRectF.right / 2).plusOrMinusOf(touchX)
+            .and((borderRectF.bottom.plus(borderRectF.bottom / 8)).plusOrMinusOf(touchY))
+    }
+
+    interface OnBorderViewActionListener {
+        fun onScaleAction()
+        fun onRotateAction()
     }
 }

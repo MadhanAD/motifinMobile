@@ -31,27 +31,12 @@ class ResizeActivity : AppCompatActivity() {
         )
         layout.layoutParams = param
 
-        layout.onEditorActionListener = object : EditorLayout.OnEditorActionListener {
-            override fun onScale(x: Float, y: Float) {
-
-            }
-
-            override fun onRotate(rotateAngle: Float) {
-
-            }
-
-            override fun onMove(x: Float, y: Float) {
-
-            }
-
-        }
-
         val imageView = ImageView(this)
         imageView.setImageResource(R.drawable.demo_image)
 
         val imageViewParam = FrameLayout.LayoutParams(1200, 400)
         imageView.x = 125f
-        imageView.y = 775f
+        imageView.y = 170f
         imageView.layoutParams = imageViewParam
         imageView.scaleType = ImageView.ScaleType.FIT_XY
 
@@ -64,7 +49,7 @@ class ResizeActivity : AppCompatActivity() {
 
         val imageViewParam1 = FrameLayout.LayoutParams(1200, 400)
         imageView1.x = 125f
-        imageView1.y = 475f
+        imageView1.y = 620f
         imageView1.layoutParams = imageViewParam1
         imageView1.scaleType = ImageView.ScaleType.FIT_XY
 
@@ -75,6 +60,22 @@ class ResizeActivity : AppCompatActivity() {
         layout.addView(imageView)
         layout.addView(imageView1)
 //        layout.lockChildView(borderIndicatorModel)
+
+        layout.onEditorActionListener = object : EditorLayout.OnEditorActionListener {
+            override fun onScale(x: Float, y: Float) {
+                imageView.scaleX = imageView.scaleX.plus(0.1f)
+                imageView.scaleY = imageView.scaleY.plus(0.1f)
+            }
+
+            override fun onRotate(rotateAngle: Float) {
+                imageView.rotation = imageView.rotation.plus(10)
+            }
+
+            override fun onMove(x: Float, y: Float) {
+
+            }
+
+        }
 
         val button = Button(this@ResizeActivity)
         button.text = "Update Border"

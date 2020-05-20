@@ -27,9 +27,20 @@ class EditorLayout(context: Context) : FrameLayout(context) {
         mPaint.color = Color.RED
         mPaint.style = Paint.Style.STROKE
         mBorderView.updateBorder(BorderIndicatorModel(View(context)))
+        mBorderView.onBorderViewActionListener =
+            object : BorderIndicatorView.OnBorderViewActionListener {
+                override fun onScaleAction() {
+                    onEditorActionListener?.onScale(0f, 0f)
+                }
+
+                override fun onRotateAction() {
+                    onEditorActionListener?.onRotate(10f)
+                }
+
+            }
     }
 
-    lateinit var onEditorActionListener: OnEditorActionListener
+    var onEditorActionListener: OnEditorActionListener? = null
 
     fun lockChildView(model: BorderIndicatorModel) {
         mBorderView.updateBorder(model)
