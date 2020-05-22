@@ -19,30 +19,40 @@ class EditorLayout(context: Context) : FrameLayout(context) {
      */
 
     private val mPaint = Paint()
-    private val mBorderView: BorderIndicatorView = BorderIndicatorView(context)
+    private var mBorderView: BorderIndicatorView = BorderIndicatorView(context)
     var isViewLocked: Boolean = false
+
+    private val mOnBorderViewActionListener =
+        object : BorderIndicatorView.OnBorderViewActionListener {
+            override fun onScaleAction(x: Float, y: Float) {
+                onEditorActionListener?.onScale(x, y)
+            }
+
+            override fun onRotateAction(rotateDegree: Float) {
+                onEditorActionListener?.onRotate(rotateDegree)
+            }
+        }
 
     init {
         mPaint.strokeWidth = 10f
         mPaint.color = Color.RED
         mPaint.style = Paint.Style.STROKE
         mBorderView.updateBorder(BorderIndicatorModel(View(context)))
-        mBorderView.onBorderViewActionListener =
-            object : BorderIndicatorView.OnBorderViewActionListener {
-                override fun onScaleAction() {
-                    onEditorActionListener?.onScale(0f, 0f)
-                }
-
-                override fun onRotateAction() {
-                    onEditorActionListener?.onRotate(10f)
-                }
-
-            }
+        mBorderView.onBorderViewActionListener = mOnBorderViewActionListener
     }
 
     var onEditorActionListener: OnEditorActionListener? = null
 
+    val onBorderViewChangeListener: OnBorderViewChangeListener by lazy {
+        object : OnBorderViewChangeListener {
+            override fun updateAfterRotate() {
+                mBorderView.updateBorderAfterRotate()
+            }
+        }
+    }
+
     fun lockChildView(model: BorderIndicatorModel) {
+//        mBorderView = BorderIndicatorView(context)
         mBorderView.updateBorder(model)
         mBorderView.layoutParams = model.layoutParam()
         mBorderView.x = model.getBorderX()
@@ -51,7 +61,11 @@ class EditorLayout(context: Context) : FrameLayout(context) {
         isViewLocked = true
     }
 
-    fun unLockChildView() {
+    fun unLockChildView(model: BorderIndicatorModel) {
+        mBorderView.updateBorder(model)
+        mBorderView.layoutParams = model.layoutParam()
+        mBorderView.x = model.getBorderX()
+        mBorderView.y = model.getBorderY()
         removeView(mBorderView)
         isViewLocked = false
     }
@@ -61,5 +75,9 @@ class EditorLayout(context: Context) : FrameLayout(context) {
         fun onScale(x: Float, y: Float)
         fun onRotate(rotateAngle: Float)
         fun onMove(x: Float, y: Float)
+    }
+
+    interface OnBorderViewChangeListener {
+        fun updateAfterRotate()
     }
 }

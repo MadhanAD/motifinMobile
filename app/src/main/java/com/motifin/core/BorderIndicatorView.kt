@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 
+
 class BorderIndicatorView(context: Context) : View(context) {
 
     companion object {
@@ -83,18 +84,23 @@ class BorderIndicatorView(context: Context) : View(context) {
         val rectF = borderIndicatorModel.convertToRect()
         return when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                if (isScaleIndicator(event.x, event.y, rectF)) {
-                    scaleView()
-                } else if (isRotateIndicator(event.x, event.y, rectF)) {
-                    rotateView()
+                //lock pointer
+                val indicatorType = getIndicatorType(event.x, event.y, rectF)
+                if (indicatorType != IndicatorType.NONE && indicatorType != IndicatorType.ROTATE) {
+                    lastTouchX = event.x
+                    lastTouchY = event.y
+                } else if (indicatorType == IndicatorType.ROTATE) {
+//                    rotateView()H
                 }
-                event.actionIndex.also { pointerIndex ->
-                    event.getX(pointerIndex)
-                }
-                event.getPointerId(0)
                 true
             }
             MotionEvent.ACTION_MOVE -> {
+                val indicatorType = getIndicatorType(event.x, event.y, rectF)
+                if (indicatorType != IndicatorType.NONE && indicatorType != IndicatorType.ROTATE) {
+                    scaleView(event, indicatorType)
+                } else if (indicatorType == IndicatorType.ROTATE) {
+                    rotateView(event)
+                }
                 true
             }
             MotionEvent.ACTION_UP -> {
@@ -105,45 +111,124 @@ class BorderIndicatorView(context: Context) : View(context) {
     }
 
     private val scalePoint = 0.1f
-    private val rotateAngle = 10
-    private fun scaleView() {
-        scaleX = scaleX.plus(scalePoint)
-        scaleY = scaleY.plus(scalePoint)
-        onBorderViewActionListener?.onScaleAction()
+    private val rotateAngle = -10
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+    private fun scaleView(motionEvent: MotionEvent, indicatorType: IndicatorType) {
+        var x = 0f
+        var y = 0f
+//        val (x, y) = arrayListOf(scaleX.plus(scalePoint), scaleY.plus(scalePoint))
+        when (indicatorType) {
+            IndicatorType.LEFT_TOP -> {
+                if (lastTouchX > motionEvent.x && lastTouchY > motionEvent.y) {
+                    // scale +
+                    x = scaleX.plus(scalePoint)
+                    y = scaleY.plus(scalePoint)
+                } else {
+                    // scale -
+                    x = scaleX.minus(scalePoint)
+                    y = scaleY.minus(scalePoint)
+                }
+            }
+            IndicatorType.RIGHT_TOP -> {
+                if (lastTouchX < motionEvent.x && lastTouchY > motionEvent.y) {
+                    // scale +
+                    x = scaleX.plus(scalePoint)
+                    y = scaleY.plus(scalePoint)
+                } else {
+                    // scale -
+                    x = scaleX.minus(scalePoint)
+                    y = scaleY.minus(scalePoint)
+                }
+            }
+            IndicatorType.RIGHT_BOTTOM -> {
+                if (lastTouchX < motionEvent.x && lastTouchY < motionEvent.y) {
+                    // scale +
+                    x = scaleX.plus(scalePoint)
+                    y = scaleY.plus(scalePoint)
+                } else {
+                    // scale -
+                    x = scaleX.minus(scalePoint)
+                    y = scaleY.minus(scalePoint)
+                }
+            }
+            IndicatorType.LEFT_BOTTOM -> {
+                if (lastTouchX > motionEvent.x && lastTouchY < motionEvent.y) {
+                    // scale +
+                    x = scaleX.plus(scalePoint)
+                    y = scaleY.plus(scalePoint)
+                } else {
+                    // scale -
+                    x = scaleX.minus(scalePoint)
+                    y = scaleY.minus(scalePoint)
+                }
+            }
+            else -> {
+                x = 0f
+                y = 0f
+            }
+        }
+        val log = "lastTouchX: $lastTouchX ; lastTouchY: $lastTouchY " +
+                "\n touchX: ${motionEvent.x} ; touchY: ${motionEvent.y}" +
+                "\n VIEW $indicatorType X=$x ; Y=$y"
+        Log.e("MESSAGE", log)
+
+        if (x > 0 && y > 0) {
+            scaleX = x
+            scaleY = y
+            onBorderViewActionListener?.onScaleAction(x, y)
+            lastTouchX = motionEvent.x
+            lastTouchY = motionEvent.y
+        }
+        invalidate()
     }
 
-    private fun rotateView() {
-        rotation = rotation.plus(rotateAngle)
-        onBorderViewActionListener?.onRotateAction()
+    private fun rotateView(event: MotionEvent) {
+
+        val angle = rotation.plus(rotateAngle)
+        rotation = angle
+        onBorderViewActionListener?.onRotateAction(angle)
     }
 
-    private fun isScaleIndicator(touchX: Float, touchY: Float, borderRectF: RectF): Boolean {
+    private enum class IndicatorType {
+        NONE, LEFT_TOP, RIGHT_TOP, RIGHT_BOTTOM, LEFT_BOTTOM, ROTATE
+    }
+
+    private fun getIndicatorType(touchX: Float, touchY: Float, borderRectF: RectF): IndicatorType {
         // is Left Top
         if (borderRectF.left.plusOrMinusOf(touchX).and(borderRectF.top.plusOrMinusOf(touchY)))
-            return true
+            return IndicatorType.LEFT_TOP
 
         // is right top
         if (borderRectF.right.plusOrMinusOf(touchX).and(borderRectF.top.plusOrMinusOf(touchY)))
-            return true
+            return IndicatorType.RIGHT_TOP
 
         // is right bottom
         if (borderRectF.right.plusOrMinusOf(touchX).and(borderRectF.bottom.plusOrMinusOf(touchY)))
-            return true
+            return IndicatorType.RIGHT_BOTTOM
 
         // is left bottom
         if (borderRectF.left.plusOrMinusOf(touchX).and(borderRectF.bottom.plusOrMinusOf(touchY)))
-            return true
+            return IndicatorType.LEFT_BOTTOM
 
-        return false
+        if ((borderRectF.left / 2).plus(borderRectF.right / 2).plusOrMinusOf(touchX)
+                .and((borderRectF.bottom.plus(borderRectF.bottom / 8)).plusOrMinusOf(touchY))
+        )
+            return IndicatorType.ROTATE
+
+        return IndicatorType.NONE
     }
 
-    private fun isRotateIndicator(touchX: Float, touchY: Float, borderRectF: RectF): Boolean {
-        return (borderRectF.left / 2).plus(borderRectF.right / 2).plusOrMinusOf(touchX)
-            .and((borderRectF.bottom.plus(borderRectF.bottom / 8)).plusOrMinusOf(touchY))
+//    private fun isRotateIndicator(touchX: Float, touchY: Float, borderRectF: RectF): Boolean {
+//        return
+//    }
+
+    fun updateBorderAfterRotate() {
+        // TODO: update border view border according to target view border
     }
 
     interface OnBorderViewActionListener {
-        fun onScaleAction()
-        fun onRotateAction()
+        fun onScaleAction(x: Float, y: Float)
+        fun onRotateAction(rotateDegree: Float)
     }
 }

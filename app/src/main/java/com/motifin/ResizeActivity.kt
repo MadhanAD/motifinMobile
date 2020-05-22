@@ -1,10 +1,12 @@
 package com.motifin
 
 import android.os.Bundle
+import android.util.Log
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.motifin.core.BorderIndicatorModel
 import com.motifin.core.EditorLayout
@@ -63,12 +65,16 @@ class ResizeActivity : AppCompatActivity() {
 
         layout.onEditorActionListener = object : EditorLayout.OnEditorActionListener {
             override fun onScale(x: Float, y: Float) {
-                imageView.scaleX = imageView.scaleX.plus(0.1f)
-                imageView.scaleY = imageView.scaleY.plus(0.1f)
+//                imageView.scaleX = imageView.scaleX.plus(0.1f)
+//                imageView.scaleY = imageView.scaleY.plus(0.1f)
+                imageView.scaleX = x
+                imageView.scaleY = y
             }
 
             override fun onRotate(rotateAngle: Float) {
-                imageView.rotation = imageView.rotation.plus(10)
+//                imageView.rotation = imageView.rotation.plus(10)
+                imageView.rotation = rotateAngle
+                Log.e("Rotate", " x: ${imageView.x}; y: ${imageView.y}")
             }
 
             override fun onMove(x: Float, y: Float) {
@@ -77,22 +83,39 @@ class ResizeActivity : AppCompatActivity() {
 
         }
 
-        val button = Button(this@ResizeActivity)
-        button.text = "Update Border"
-        val btnParam = ViewGroup.LayoutParams(300, 150)
-        button.layoutParams = btnParam
-        button.setOnClickListener {
+        val updateButton = Button(this@ResizeActivity)
+        updateButton.text = "Update Border"
+        val updateBtnParam = ViewGroup.LayoutParams(300, 150)
+        updateButton.layoutParams = updateBtnParam
+        updateButton.setOnClickListener {
             if (isBorderVisible) {
-                if (layout.isViewLocked) layout.unLockChildView()
+                if (layout.isViewLocked) layout.unLockChildView(borderIndicatorModel)
                 layout.lockChildView(borderIndicatorModel)
             } else {
-                if (layout.isViewLocked) layout.unLockChildView()
+                if (layout.isViewLocked) layout.unLockChildView(borderIndicatorModel)
                 layout.lockChildView(borderIndicatorModel1)
             }
             isBorderVisible = isBorderVisible.not()
         }
 
-        layout.addView(button)
+        val resetButton = Button(this@ResizeActivity)
+        resetButton.text = "Reset Border"
+        val btnParam = ViewGroup.LayoutParams(300, 150)
+        resetButton.layoutParams = btnParam
+        resetButton.setOnClickListener {
+            layout.onBorderViewChangeListener.updateAfterRotate()
+        }
+
+        val linearLayout = LinearLayout(this)
+        val linearLayoutParam = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        linearLayout.layoutParams = linearLayoutParam
+        linearLayout.addView(updateButton)
+        linearLayout.addView(resetButton)
+
+        layout.addView(linearLayout)
         frameLayout.addView(layout)
 //        frameLayout.addView(button)
     }
