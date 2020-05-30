@@ -18,6 +18,7 @@ class BorderIndicatorView(context: Context) : View(context) {
 
     var borderIndicatorModel = BorderIndicatorModel(View(context))
     var onBorderViewActionListener: OnBorderViewActionListener? = null
+    var isMovable = false
 
     private val mPaint = Paint().apply {
         color = Color.RED
@@ -90,8 +91,10 @@ class BorderIndicatorView(context: Context) : View(context) {
                     lastTouchX = event.x
                     lastTouchY = event.y
                 } else if (indicatorType == IndicatorType.ROTATE) {
-//                    rotateView()H
+//                    rotateView(event)
                 }
+                isMovable = indicatorType == IndicatorType.NONE
+
                 true
             }
             MotionEvent.ACTION_MOVE -> {
@@ -100,6 +103,8 @@ class BorderIndicatorView(context: Context) : View(context) {
                     scaleView(event, indicatorType)
                 } else if (indicatorType == IndicatorType.ROTATE) {
                     rotateView(event)
+                } else if (indicatorType == IndicatorType.NONE) {
+                    if (isMovable) moveView(event)
                 }
                 true
             }
@@ -184,10 +189,25 @@ class BorderIndicatorView(context: Context) : View(context) {
     }
 
     private fun rotateView(event: MotionEvent) {
+//        val deltaX = event.x
+//        val deltaY = event.y
+//        val radians = atan2(deltaY, deltaX)
+//        val degree = Math.toDegrees(radians.toDouble())
+//
+//        val delta = degree - rotation
+//        rotation = rotation.plus(delta).toFloat()
 
-        val angle = rotation.plus(rotateAngle)
+        val angle = rotation.minus(rotateAngle)
         rotation = angle
         onBorderViewActionListener?.onRotateAction(angle)
+    }
+
+    private fun moveView(event: MotionEvent) {
+        val left = event.rawX
+        val top = event.rawY - height
+
+        x = left
+        y = top
     }
 
     private enum class IndicatorType {

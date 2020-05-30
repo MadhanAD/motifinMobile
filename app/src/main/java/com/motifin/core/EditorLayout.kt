@@ -3,10 +3,14 @@ package com.motifin.core
 import android.content.Context
 import android.graphics.Color
 import android.graphics.Paint
+import android.util.AttributeSet
 import android.view.View
 import android.widget.FrameLayout
 
-class EditorLayout(context: Context) : FrameLayout(context) {
+class EditorLayout : FrameLayout {
+
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attributeSet: AttributeSet) : super(context, attributeSet)
 
     /*
         1. lock/unlock child by click action on child
@@ -21,6 +25,7 @@ class EditorLayout(context: Context) : FrameLayout(context) {
     private val mPaint = Paint()
     private var mBorderView: BorderIndicatorView = BorderIndicatorView(context)
     var isViewLocked: Boolean = false
+    var currentTargetView: View? = null
 
     private val mOnBorderViewActionListener =
         object : BorderIndicatorView.OnBorderViewActionListener {
@@ -53,6 +58,7 @@ class EditorLayout(context: Context) : FrameLayout(context) {
 
     fun lockChildView(model: BorderIndicatorModel) {
 //        mBorderView = BorderIndicatorView(context)
+        currentTargetView = model.targetView
         mBorderView.updateBorder(model)
         mBorderView.layoutParams = model.layoutParam()
         mBorderView.x = model.getBorderX()
@@ -62,6 +68,7 @@ class EditorLayout(context: Context) : FrameLayout(context) {
     }
 
     fun unLockChildView(model: BorderIndicatorModel) {
+        currentTargetView = null
         mBorderView.updateBorder(model)
         mBorderView.layoutParams = model.layoutParam()
         mBorderView.x = model.getBorderX()
